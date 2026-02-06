@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block title %}Liked Songs - MoodMusic{% endblock %}
+
+{% block extra_css %}
+<style>
+    .likes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+        padding: 20px 0;
+    }
+
+    .song-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .song-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .song-thumbnail {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+    }
+
+    .song-info {
+        padding: 15px;
+    }
+
+    .song-title {
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 5px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .song-artist {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .song-mood {
+        display: inline-block;
+        background: #f0f0f0;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        color: #333;
+        text-transform: capitalize;
+        margin-bottom: 12px;
+    }
+
+    .song-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-play, .btn-unlike {
+        flex: 1;
+        padding: 8px 12px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-play {
+        background: #6366f1;
+        color: white;
+    }
+
+    .btn-play:hover {
+        background: #4f46e5;
+    }
+
+    .btn-unlike {
+        background: #f3f4f6;
+        color: #333;
+    }
+
+    .btn-unlike:hover {
+        background: #e5e7eb;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        color: #ccc;
+        margin-bottom: 20px;
+    }
+
+    .empty-text {
+        color: #999;
+        font-size: 1.1rem;
+        margin-bottom: 20px;
+    }
+
+    .empty-link {
+        color: #6366f1;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .empty-link:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-white mb-4 text-center">
+        <i class="fas fa-heart"></i> My Liked Songs
+    </h1>
+
+    {% if liked_songs %}
+        <div class="likes-grid">
+            {% for like in liked_songs %}
+                <div class="song-card">
+                    <img src="{{ like.song.thumbnail_url }}" alt="{{ like.song.title }}" class="song-thumbnail">
+                    <div class="song-info">
+                        <div class="song-title" title="{{ like.song.title }}">{{ like.song.title }}</div>
+                        <div class="song-artist" title="{{ like.song.artist }}">{{ like.song.artist }}</div>
+                        <div class="song-mood">
+                            <i class="fas fa-face-smile"></i> {{ like.song.mood|title }}
+                        </div>
+                        <div class="song-actions">
+                            <a href="{% url 'player' like.song.id %}" class="btn-play">
+                                <i class="fas fa-play"></i> Play
+                            </a>
+                            <button class="btn-unlike" onclick="unlikeSong({{ like.song.id }}, this)">
+                                <i class="fas fa-trash"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-heart-empty"></i>
+            </div>
+            <div class="empty-text">No liked songs yet</div>
+            <p class="text-muted mb-4">Start detecting your mood and like songs to see them here!</p>
+            <a href="{% url 'emotion_detection' %}" class="empty-link">
+                <i class="fas fa-camera"></i> Go to Mood Detection
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function unlikeSong(songId, btn) {
+    fetch('{% url "toggle_like" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ song_id: songId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.liked) {
+            // Remove the card from DOM with animation
+            const card = btn.closest('.song-card');
+            card.style.transition = 'opacity 0.3s ease';
+            card.style.opacity = '0';
+            setTimeout(() => card.remove(), 300);
+            
+            // If no songs left, reload page to show empty state
+            if (document.querySelectorAll('.song-card').length === 0) {
+                setTimeout(() => location.reload(), 300);
+            }
+        }
+    })
+    .catch(error => console.error('Error removing like:', error));
+}
+</script>
+{% endblock %}

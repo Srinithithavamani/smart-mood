@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - MoodMusic{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 20px;
+        color: white;
+        text-align: center;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    .mood-chart-card {
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        max-height: 350px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .mood-chart-card .card-body {
+        padding: 15px !important;
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .mood-chart-card h5 {
+        font-size: 1rem;
+        margin-bottom: 8px !important;
+    }
+
+    #moodChart {
+        max-height: 250px !important;
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    @media (max-width: 768px) {
+        .mood-chart-card {
+            max-height: auto;
+        }
+        
+        .mood-chart-card .card-body {
+            padding: 15px !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-white mb-4 text-center">
+        <i class="fas fa-chart-bar"></i> Your Dashboard
+    </h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <i class="fas fa-compact-disc" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                <div class="stat-number">{{ total_songs_played }}</div>
+                <div class="stat-label">Songs Played</div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="stat-card" style="background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);">
+                <i class="fas fa-face-smile" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                <div class="stat-number">{{ mood_stats|length }}</div>
+                <div class="stat-label">Different Moods</div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="stat-card" style="background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);">
+                <i class="fas fa-calendar-days" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                <div class="stat-number">
+                    {% if total_songs_played %}
+                        {{ total_songs_played|pluralize:"day" }}
+                    {% else %}
+                        0 days
+                    {% endif %}
+                </div>
+                <div class="stat-label">Active Days</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-6 mx-auto">
+            <div class="card mood-chart-card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-pie"></i> Mood Distribution
+                    </h5>
+                    
+                    {% if mood_stats %}
+                        <div style="flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; min-height: 200px;">
+                            <canvas id="moodChart"></canvas>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <p class="text-muted" style="font-size: 0.9rem;">No data available yet. Start using the mood detection feature!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if mood_stats %}
+<script>
+    const moodData = {
+        {% for mood, count in mood_stats.items %}
+            '{{ mood }}': {{ count }},
+        {% endfor %}
+    };
+    
+    const ctx = document.getElementById('moodChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(moodData),
+            datasets: [{
+                data: Object.values(moodData),
+                backgroundColor: [
+                    '#6366f1',
+                    '#ec4899',
+                    '#10b981',
+                    '#f59e0b',
+                    '#ef4444',
+                    '#3b82f6',
+                    '#8b5cf6',
+                    '#f43f5e'
+                ],
+                borderColor: '#fff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 8,
+                        font: {
+                            size: 10
+                        },
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    padding: 6,
+                    titleFont: {
+                        size: 10
+                    },
+                    bodyFont: {
+                        size: 9
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

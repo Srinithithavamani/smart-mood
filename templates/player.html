@@ -1,0 +1,431 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Player - MoodMusic{% endblock %}
+
+{% block extra_css %}
+<style>
+    .player-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 25px;
+        color: white;
+        text-align: center;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        max-height: 85vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .album-art {
+        width: 200px;
+        height: 200px;
+        margin: 0 auto 15px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        object-fit: cover;
+    }
+
+    .song-meta {
+        margin-bottom: 15px;
+    }
+
+    .song-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 4px;
+        word-wrap: break-word;
+    }
+
+    .song-artist {
+        font-size: 0.95rem;
+        opacity: 0.85;
+        margin-bottom: 3px;
+    }
+
+    .song-mood {
+        font-size: 0.8rem;
+        opacity: 0.7;
+        text-transform: capitalize;
+    }
+
+    .player-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin: 15px 0;
+        flex-wrap: wrap;
+    }
+
+    .player-button {
+        background: rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    .player-button:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.05);
+    }
+
+    .player-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .player-button.primary {
+        background: rgba(255, 255, 255, 0.9);
+        color: #6366f1;
+        font-weight: 600;
+    }
+
+    .player-button.primary:hover {
+        background: white;
+    }
+
+    .player-button.like-btn.liked {
+        background: #ec4899;
+        border-color: #ec4899;
+    }
+
+    .progress-container {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 12px;
+        margin: 12px 0;
+        backdrop-filter: blur(5px);
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 5px;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #10b981, #14b8a6);
+        border-radius: 5px;
+        width: 0%;
+        transition: width 0.1s linear;
+    }
+
+    .time-display {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 6px;
+        font-size: 0.75rem;
+        opacity: 0.8;
+    }
+
+    .hidden-player {
+        width: 1px;
+        height: 1px;
+        position: absolute;
+        left: -9999px;
+    }
+
+    .back-button {
+        display: inline-block;
+        margin-bottom: 15px;
+    }
+
+    .back-button a {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 50px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.9rem;
+    }
+
+    .back-button a:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateX(-3px);
+    }
+
+    .volume-control {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .volume-slider {
+        width: 120px;
+        height: 4px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.2);
+        outline: none;
+        -webkit-appearance: none;
+    }
+
+    .volume-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: white;
+        cursor: pointer;
+    }
+
+    .volume-slider::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: white;
+        cursor: pointer;
+        border: none;
+    }
+
+    .volume-icon {
+        font-size: 0.8rem;
+    }
+
+    @media (max-width: 576px) {
+        .player-container {
+            padding: 20px;
+        }
+
+        .album-art {
+            width: 150px;
+            height: 150px;
+        }
+
+        .song-title {
+            font-size: 1.2rem;
+        }
+
+        .player-button {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; padding: 15px 0;">
+    <div class="back-button">
+        <a href="{% url 'emotion_detection' %}">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+
+    <div class="player-container">
+        <img src="{{ song.thumbnail_url }}" alt="{{ song.title }}" class="album-art">
+
+        <div class="song-meta">
+            <div class="song-title">{{ song.title }}</div>
+            <div class="song-artist">{{ song.artist }}</div>
+            <div class="song-mood">
+                <i class="fas fa-face-smile"></i> {{ song.mood|title }}
+            </div>
+        </div>
+
+        <!-- Progress Bar with Timeline -->
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="time-display">
+                <span id="currentTime">0:00</span>
+                <span id="duration">0:00</span>
+            </div>
+        </div>
+
+        <!-- Player Controls -->
+        <div class="player-controls">
+            <button class="player-button" id="prevBtn" onclick="skipPrevious()" {% if not prev_song %}disabled{% endif %}>
+                <i class="fas fa-step-backward"></i> <span class="d-none d-sm-inline">Previous</span>
+            </button>
+            <button class="player-button primary" id="playPauseBtn" onclick="togglePlayPause()">
+                <i class="fas fa-play"></i> <span id="playPauseText">Play</span>
+            </button>
+            <button class="player-button" id="nextBtn" onclick="skipNext()" {% if not next_song %}disabled{% endif %}>
+                <i class="fas fa-step-forward"></i> <span class="d-none d-sm-inline">Next</span>
+            </button>
+        </div>
+
+        <!-- Like Button -->
+        <div class="player-controls" style="margin: 10px 0;">
+            <button class="player-button like-btn {% if is_liked %}liked{% endif %}" id="likeBtn" onclick="toggleLike()">
+                <i class="fas {% if is_liked %}fa-heart{% else %}fa-heart-empty{% endif %}"></i>
+                <span id="likeText">{% if is_liked %}Liked{% else %}Like{% endif %}</span>
+            </button>
+        </div>
+
+        <!-- Volume Control -->
+        <div class="volume-control">
+            <i class="fas fa-volume-down volume-icon"></i>
+            <input type="range" min="0" max="100" value="70" class="volume-slider" id="volumeSlider" onchange="setVolume(this.value)">
+            <i class="fas fa-volume-up volume-icon"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden YouTube Player -->
+<iframe id="youtubePlayer" class="hidden-player" src="https://www.youtube.com/embed/{{ song.youtube_id }}?enablejsapi=1" 
+        frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen></iframe>
+
+<script>
+let ytPlayer = null;
+let isPlaying = false;
+let currentSongId = {{ song.id }};
+let isLiked = {% if is_liked %}true{% else %}false{% endif %};
+let prevSongId = {% if prev_song %}{{ prev_song.id }}{% else %}null{% endif %};
+let nextSongId = {% if next_song %}{{ next_song.id }}{% else %}null{% endif %};
+
+// Load YouTube IFrame API
+var tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+var firstScriptTag = document.getElementsByTagName('script')[0];
+firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+function onYouTubeIframeAPIReady() {
+    ytPlayer = new YT.Player('youtubePlayer', {
+        height: '1',
+        width: '1',
+        videoId: '{{ song.youtube_id }}',
+        playerVars: { 'autoplay': 0, 'controls': 0, 'rel': 0, 'modestbranding': 1 },
+        events: {
+            'onReady': function(event) {
+                // Player ready
+            },
+            'onStateChange': function(event) {
+                if (event.data === YT.PlayerState.PLAYING) {
+                    isPlaying = true;
+                    updatePlayPauseBtn();
+                    updateProgress();
+                } else if (event.data === YT.PlayerState.PAUSED) {
+                    isPlaying = false;
+                    updatePlayPauseBtn();
+                } else if (event.data === YT.PlayerState.ENDED) {
+                    skipNext();
+                }
+            }
+        }
+    });
+}
+
+function updatePlayPauseBtn() {
+    const btn = document.getElementById('playPauseBtn');
+    if (isPlaying) {
+        btn.innerHTML = '<i class="fas fa-pause"></i> <span id="playPauseText">Pause</span>';
+    } else {
+        btn.innerHTML = '<i class="fas fa-play"></i> <span id="playPauseText">Play</span>';
+    }
+}
+
+function togglePlayPause() {
+    if (!ytPlayer) return;
+    if (isPlaying) {
+        ytPlayer.pauseVideo();
+        isPlaying = false;
+    } else {
+        ytPlayer.playVideo();
+        isPlaying = true;
+    }
+    updatePlayPauseBtn();
+}
+
+function updateProgress() {
+    if (!ytPlayer || ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) return;
+
+    const current = ytPlayer.getCurrentTime();
+    const duration = ytPlayer.getDuration();
+
+    if (duration > 0) {
+        const percent = (current / duration) * 100;
+        document.getElementById('progressFill').style.width = percent + '%';
+        document.getElementById('currentTime').textContent = formatTime(current);
+        document.getElementById('duration').textContent = formatTime(duration);
+    }
+
+    requestAnimationFrame(updateProgress);
+}
+
+function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+}
+
+// Seek support
+document.getElementById('progressBar').addEventListener('click', function(e) {
+    if (!ytPlayer) return;
+    const rect = this.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    const duration = ytPlayer.getDuration();
+    ytPlayer.seekTo(percent * duration);
+});
+
+function setVolume(vol) {
+    if (ytPlayer) {
+        ytPlayer.setVolume(vol);
+    }
+}
+
+function skipPrevious() {
+    if (prevSongId) {
+        window.location.href = `{% url 'player' 999999999 %}`.replace('999999999', prevSongId);
+    }
+}
+
+function skipNext() {
+    if (nextSongId) {
+        window.location.href = `{% url 'player' 999999999 %}`.replace('999999999', nextSongId);
+    }
+}
+
+function toggleLike() {
+    fetch('{% url "toggle_like" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ song_id: currentSongId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.liked !== undefined) {
+            isLiked = data.liked;
+            const btn = document.getElementById('likeBtn');
+            const text = document.getElementById('likeText');
+            if (isLiked) {
+                btn.classList.add('liked');
+                btn.innerHTML = '<i class="fas fa-heart"></i> <span id="likeText">Liked</span>';
+            } else {
+                btn.classList.remove('liked');
+                btn.innerHTML = '<i class="fas fa-heart-empty"></i> <span id="likeText">Like</span>';
+            }
+        }
+    })
+    .catch(error => console.error('Error toggling like:', error));
+}
+</script>
+{% endblock %}

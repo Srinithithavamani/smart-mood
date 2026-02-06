@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - MoodMusic{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row" style="min-height: calc(100vh - 200px); align-items: center;">
+        <div class="col-lg-8 mx-auto">
+            <div class="text-center mb-5">
+                <h1 class="display-4 fw-bold text-white mb-4">
+                    <i class="fas fa-heart"></i> Welcome back, {{ user.first_name|default:user.username }}!
+                </h1>
+                <p class="lead text-white-50 mb-5">
+                    Let's find the perfect music for your mood
+                </p>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card h-100" style="border-radius: 15px; cursor: pointer; transition: all 0.3s;" 
+                         onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <div class="card-body text-center p-5">
+                            <i class="fas fa-camera" style="font-size: 3rem; color: #6366f1;"></i>
+                            <h5 class="card-title mt-3 fw-bold">Detect Your Mood</h5>
+                            <p class="card-text text-muted">
+                                Use your webcam to detect your current emotion and get personalized music recommendations.
+                            </p>
+                            <a href="{% url 'emotion_detection' %}" class="btn btn-primary mt-3">
+                                Start <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card h-100" style="border-radius: 15px; cursor: pointer; transition: all 0.3s;" 
+                         onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <div class="card-body text-center p-5">
+                            <i class="fas fa-history" style="font-size: 3rem; color: #ec4899;"></i>
+                            <h5 class="card-title mt-3 fw-bold">Your History</h5>
+                            <p class="card-text text-muted">
+                                View your past moods and the songs that matched each emotion.
+                            </p>
+                            <a href="{% url 'playlist_history' %}" class="btn btn-primary mt-3">
+                                Explore <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row g-4 mt-2">
+                <div class="col-md-6">
+                    <div class="card h-100" style="border-radius: 15px; cursor: pointer; transition: all 0.3s;" 
+                         onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <div class="card-body text-center p-5">
+                            <i class="fas fa-chart-bar" style="font-size: 3rem; color: #10b981;"></i>
+                            <h5 class="card-title mt-3 fw-bold">Your Dashboard</h5>
+                            <p class="card-text text-muted">
+                                See statistics and insights about your listening habits.
+                            </p>
+                            <a href="{% url 'dashboard' %}" class="btn btn-primary mt-3">
+                                View <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card h-100" style="border-radius: 15px; cursor: pointer; transition: all 0.3s;" 
+                         onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <div class="card-body text-center p-5">
+                            <i class="fas fa-cog" style="font-size: 3rem; color: #f59e0b;"></i>
+                            <h5 class="card-title mt-3 fw-bold">Settings</h5>
+                            <p class="card-text text-muted">
+                                Manage your language preferences and account settings.
+                            </p>
+                            <a href="{% url 'language_selection' %}" class="btn btn-primary mt-3">
+                                Manage <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
