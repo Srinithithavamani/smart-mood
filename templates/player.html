@@ -100,6 +100,68 @@
         border-color: #ec4899;
     }
 
+    .song-source-badge {
+        display: inline-block;
+        font-size: 0.7rem;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 3px 8px;
+        border-radius: 20px;
+        margin-top: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .audio-player-note {
+        font-size: 0.85rem;
+        opacity: 0.8;
+        margin-bottom: 10px;
+        padding: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+    }
+
+    .lyrics-container {
+        margin-top: 20px;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        max-height: 250px;
+        overflow-y: auto;
+        text-align: left;
+    }
+
+    .lyrics-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        opacity: 0.9;
+    }
+
+    .lyrics-content {
+        font-size: 0.85rem;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+
+    .lyrics-link {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 6px 12px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        font-size: 0.75rem;
+        text-decoration: none;
+        color: white;
+        transition: all 0.3s ease;
+    }
+
+    .lyrics-link:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
     .progress-container {
         background: rgba(255, 255, 255, 0.1);
         border-radius: 10px;
@@ -235,7 +297,11 @@
     </div>
 
     <div class="player-container">
-        <img src="{{ song.thumbnail_url }}" alt="{{ song.title }}" class="album-art">
+        {% if song.thumbnail_image or song.thumbnail_url %}
+            <img src="{% if song.thumbnail_image %}{{ song.thumbnail_image.url }}{% else %}{{ song.thumbnail_url }}{% endif %}" alt="{{ song.title }}" class="album-art" onerror="this.src='https://via.placeholder.com/200x200?text=MoodMusic'">
+        {% else %}
+            <img src="https://via.placeholder.com/200x200?text=MoodMusic" alt="{{ song.title }}" class="album-art">
+        {% endif %}
 
         <div class="song-meta">
             <div class="song-title">{{ song.title }}</div>
@@ -243,7 +309,18 @@
             <div class="song-mood">
                 <i class="fas fa-face-smile"></i> {{ song.mood|title }}
             </div>
+            {% if song.audio_file %}
+                <div class="song-source-badge">🎵 Local Audio</div>
+            {% elif song.youtube_id %}
+                <div class="song-source-badge">▶️ YouTube</div>
+            {% endif %}
         </div>
+
+        {% if song.audio_file %}
+            <div class="audio-player-note">
+                <i class="fas fa-info-circle"></i> Playing from local library
+            </div>
+        {% endif %}
 
         <!-- Progress Bar with Timeline -->
         <div class="progress-container">
@@ -283,51 +360,48 @@
             <input type="range" min="0" max="100" value="70" class="volume-slider" id="volumeSlider" onchange="setVolume(this.value)">
             <i class="fas fa-volume-up volume-icon"></i>
         </div>
-    </div>
+
+        <!-- Lyrics Section (if available) -->
+        {% if song.lyrics_url %}
+        <div class="lyrics-container">
+            <div class="lyrics-title"><i class="fas fa-file-lyrics"></i> Lyrics</div>
+            <a href="{{ song.lyrics_url }}" target="_blank" class="lyrics-link">
+                <i class="fas fa-external-link-alt"></i> View Full Lyrics
+            </a>
+        </div>
+        {% endif %}
 </div>
 
-<!-- Hidden YouTube Player -->
-<iframe id="youtubePlayer" class="hidden-player" src="https://www.youtube.com/embed/{{ song.youtube_id }}?enablejsapi=1" 
-        frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-        allowfullscreen></iframe>
+<!-- Hidden Audio Player -->
+<audio id="audioPlayer" class="hidden-player"></audio>
 
 <script>
-let ytPlayer = null;
+let audioPlayer = null;
 let isPlaying = false;
 let currentSongId = {{ song.id }};
 let isLiked = {% if is_liked %}true{% else %}false{% endif %};
 let prevSongId = {% if prev_song %}{{ prev_song.id }}{% else %}null{% endif %};
 let nextSongId = {% if next_song %}{{ next_song.id }}{% else %}null{% endif %};
+let hasAudio = {% if song.audio_file %}true{% else %}false{% endif %};
 
-// Load YouTube IFrame API
-var tag = document.createElement('script');
-tag.src = "https://www.youtube.com/iframe_api";
-var firstScriptTag = document.getElementsByTagName('script')[0];
-firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-function onYouTubeIframeAPIReady() {
-    ytPlayer = new YT.Player('youtubePlayer', {
-        height: '1',
-        width: '1',
-        videoId: '{{ song.youtube_id }}',
-        playerVars: { 'autoplay': 0, 'controls': 0, 'rel': 0, 'modestbranding': 1 },
-        events: {
-            'onReady': function(event) {
-                // Player ready
-            },
-            'onStateChange': function(event) {
-                if (event.data === YT.PlayerState.PLAYING) {
-                    isPlaying = true;
-                    updatePlayPauseBtn();
-                    updateProgress();
-                } else if (event.data === YT.PlayerState.PAUSED) {
-                    isPlaying = false;
-                    updatePlayPauseBtn();
-                } else if (event.data === YT.PlayerState.ENDED) {
-                    skipNext();
-                }
-            }
-        }
+// Initialize audio player
+audioPlayer = document.getElementById('audioPlayer');
+if (hasAudio) {
+    audioPlayer.src = '{{ song.audio_file.url }}';
+    audioPlayer.addEventListener('play', function() {
+        isPlaying = true;
+        updatePlayPauseBtn();
+        updateProgress();
+    });
+    audioPlayer.addEventListener('pause', function() {
+        isPlaying = false;
+        updatePlayPauseBtn();
+    });
+    audioPlayer.addEventListener('ended', function() {
+        skipNext();
+    });
+    audioPlayer.addEventListener('loadedmetadata', function() {
+        document.getElementById('duration').textContent = formatTime(audioPlayer.duration);
     });
 }
 
@@ -341,34 +415,34 @@ function updatePlayPauseBtn() {
 }
 
 function togglePlayPause() {
-    if (!ytPlayer) return;
+    if (!audioPlayer) return;
     if (isPlaying) {
-        ytPlayer.pauseVideo();
+        audioPlayer.pause();
         isPlaying = false;
     } else {
-        ytPlayer.playVideo();
+        audioPlayer.play();
         isPlaying = true;
     }
     updatePlayPauseBtn();
 }
 
 function updateProgress() {
-    if (!ytPlayer || ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) return;
+    if (!audioPlayer || !isPlaying) return;
 
-    const current = ytPlayer.getCurrentTime();
-    const duration = ytPlayer.getDuration();
+    const current = audioPlayer.currentTime;
+    const duration = audioPlayer.duration;
 
     if (duration > 0) {
         const percent = (current / duration) * 100;
         document.getElementById('progressFill').style.width = percent + '%';
         document.getElementById('currentTime').textContent = formatTime(current);
-        document.getElementById('duration').textContent = formatTime(duration);
     }
 
     requestAnimationFrame(updateProgress);
 }
 
 function formatTime(seconds) {
+    if (isNaN(seconds)) return '0:00';
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
@@ -376,16 +450,15 @@ function formatTime(seconds) {
 
 // Seek support
 document.getElementById('progressBar').addEventListener('click', function(e) {
-    if (!ytPlayer) return;
+    if (!audioPlayer || audioPlayer.duration === Infinity) return;
     const rect = this.getBoundingClientRect();
     const percent = (e.clientX - rect.left) / rect.width;
-    const duration = ytPlayer.getDuration();
-    ytPlayer.seekTo(percent * duration);
+    audioPlayer.currentTime = percent * audioPlayer.duration;
 });
 
 function setVolume(vol) {
-    if (ytPlayer) {
-        ytPlayer.setVolume(vol);
+    if (audioPlayer) {
+        audioPlayer.volume = vol / 100;
     }
 }
 
@@ -415,7 +488,6 @@ function toggleLike() {
         if (data.liked !== undefined) {
             isLiked = data.liked;
             const btn = document.getElementById('likeBtn');
-            const text = document.getElementById('likeText');
             if (isLiked) {
                 btn.classList.add('liked');
                 btn.innerHTML = '<i class="fas fa-heart"></i> <span id="likeText">Liked</span>';

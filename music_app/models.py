@@ -33,6 +33,7 @@ class Song(models.Model):
         ('surprise', 'Surprise'),
         ('disgust', 'Disgust'),
         ('neutral', 'Neutral'),
+        ('angry', 'Angry'),
     )
     
     LANGUAGE_CHOICES = (
@@ -50,11 +51,15 @@ class Song(models.Model):
     
     title = models.CharField(max_length=255)
     artist = models.CharField(max_length=255)
-    youtube_id = models.CharField(max_length=255, unique=True)
+    youtube_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    audio_file = models.FileField(upload_to='songs/', null=True, blank=True, help_text='Upload MP3 or other audio format (MP3, WAV, OGG supported)')
     mood = models.CharField(max_length=20, choices=MOOD_CHOICES)
     language = models.CharField(max_length=5, choices=LANGUAGE_CHOICES)
     description = models.TextField(null=True, blank=True)
-    thumbnail_url = models.URLField(null=True, blank=True)
+    thumbnail_url = models.URLField(null=True, blank=True, help_text='URL to thumbnail image')
+    thumbnail_image = models.ImageField(upload_to='thumbnails/', null=True, blank=True, help_text='Upload album art image (JPG, PNG)')
+    duration = models.IntegerField(null=True, blank=True, help_text='Duration in seconds')
+    lyrics_url = models.URLField(null=True, blank=True, help_text='Link to lyrics (Genius.com, AZLyrics, etc.)')
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
